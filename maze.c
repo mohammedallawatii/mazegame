@@ -133,6 +133,16 @@ void print_maze(maze *this, coord *player)
     }
 }
 
+void print_full_map(maze *this)
+{
+    printf("\nFull Map:\n");
+    for (int i = 0; i < this->height; i++)
+    {
+        printf("%s", this->map[i]);
+    }
+    printf("\n");
+}
+
 void move(maze *this, coord *player, char direction)
 {
     int newX = player->x;
@@ -208,13 +218,22 @@ int main(int argc, char *argv[])
 
     coord player = this_maze.start;
 
+    print_maze(&this_maze, &player);
+
     char input;
     do
     {
-        print_maze(&this_maze, &player);
-        printf("Enter your move (W/A/S/D): ");
+        printf("Enter your move (W/A/S/D/M for map): ");
         scanf(" %c", &input);
-        move(&this_maze, &player, input);
+        if (input == 'M' || input == 'm')
+        {
+            print_full_map(&this_maze);
+        }
+        else
+        {
+            move(&this_maze, &player, input);
+            print_maze(&this_maze, &player);
+        }
     } while (!has_won(&this_maze, &player));
 
     printf("Congratulations! You've won!\n");
