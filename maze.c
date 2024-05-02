@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_DIM 100
 #define MIN_DIM 5
@@ -63,17 +64,16 @@ int get_width(FILE *file)
 
 int get_height(FILE *file)
 {
-    int height = 0;
-    fseek(file, 0, SEEK_SET);
+    int height = 1;
     char c;
-    while ((c = fgetc(file)) != EOF)
-    {
-        if (c == '\n')
-        {
+
+    fseek(file, 0, SEEK_SET);
+    while ((c = fgetc(file)) != EOF) {
+        if (c == '\n') {
             height++;
         }
     }
-    return height + 1; // Adding 1 to account for the last line without newline
+    return height;
 }
 
 int read_maze(maze *this, FILE *file)
@@ -81,31 +81,28 @@ int read_maze(maze *this, FILE *file)
     int width = get_width(file);
     int height = get_height(file);
 
-    if (width < MIN_DIM || width > MAX_DIM || height < MIN_DIM || height > MAX_DIM)
-    {
+    if (width < MIN_DIM || width > MAX_DIM || height < MIN_DIM || height > MAX_DIM) {
         return 1;
     }
 
-    if (create_maze(this, height, width) != 0)
-    {
+    if (create_maze(this, height, width) != 0) {
         return 1;
     }
 
     fseek(file, 0, SEEK_SET);
-    for (int i = 0; i < height; i++)
-    {
-        fgets(this->map[i], width + 1, file); // Read including newline
-        for (int j = 0; j < width; j++)
-        {
-            if (this->map[i][j] == 'S')
-            {
-                this->start.x = j;
-                this->start.y = i;
-            }
-            else if (this->map[i][j] == 'E')
-            {
-                this->end.x = j;
-                this->end.y = i;
+    char buffer[width + 2];
+    for (int i = 0; i < height; i++) {
+        if (fgets(buffer, sizeof(buffer), file)) {
+            buffer[strcspn(buffer, "\r\n")] = '\0';
+            strncpy(this->map[i], buffer, width + 1);
+            for (int j = 0; j < width; j++) {
+                if (this->map[i][j] == 'S') {
+                    this->start.x = j;
+                    this->start.y = i;
+                } else if (this->map[i][j] == 'E') {
+                    this->end.x = j;
+                    this->end.y = i;
+                }
             }
         }
     }
@@ -115,7 +112,6 @@ int read_maze(maze *this, FILE *file)
 
 void print_maze(maze *this, coord *player)
 {
-    printf("\n");
     for (int i = 0; i < this->height; i++)
     {
         for (int j = 0; j < this->width; j++)
@@ -131,16 +127,6 @@ void print_maze(maze *this, coord *player)
         }
         printf("\n");
     }
-}
-
-void print_full_map(maze *this)
-{
-    printf("\nFull Map:\n");
-    for (int i = 0; i < this->height; i++)
-    {
-        printf("%s", this->map[i]);
-    }
-    printf("\n");
 }
 
 void move(maze *this, coord *player, char direction)
@@ -223,20 +209,19 @@ int main(int argc, char *argv[])
     char input;
     do
     {
-        printf("Enter your move (W/A/S/D/M for map): ");
+        printf("\nEnter your move (W/A/S/D/M for map): ");
         scanf(" %c", &input);
         if (input == 'M' || input == 'm')
         {
-            print_full_map(&this_maze);
+            print_maze(&this_maze, &player);
         }
         else
         {
             move(&this_maze, &player, input);
-            print_maze(&this_maze, &player);
         }
     } while (!has_won(&this_maze, &player));
 
-    printf("Congratulations! You've won!\n");
+    printf("\nCongratulations! You've won!\n");
 
     free_maze(&this_maze);
 
